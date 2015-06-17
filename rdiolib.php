@@ -108,8 +108,8 @@ class RdioLib
 			$ch = curl_init($this->token_endpoint);
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
 				'grant_type'    => 'refresh_token',
 				'refresh_token' => $_SESSION['oauth2auth']->refresh_token
@@ -129,8 +129,8 @@ class RdioLib
 			$ch = curl_init($this->token_endpoint);
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
 				'grant_type'   => 'authorization_code',
 				'code'         => $_GET['code'],
