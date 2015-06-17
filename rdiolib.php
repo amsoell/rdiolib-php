@@ -88,6 +88,7 @@ class RdioLib
 		else
 		{
 			unset($_SESSION["rdioOauth2auth"]);
+			unset($_SESSION["rdioOauth2expires"]);
 		}
 	}
 
