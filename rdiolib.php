@@ -1,5 +1,5 @@
 <?php
-# Quick and dirty Rdio class implementing OAuth2
+# Quick and dirty Rdio class implementing OAuth 2.0
 #
 # Copyright (c) 2015 Ying Zhang
 #
