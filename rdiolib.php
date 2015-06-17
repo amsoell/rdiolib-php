@@ -53,7 +53,8 @@ class RdioLib
 	 * @access private
 	 * @return boolean
 	 */
-	public function is_authenticated() {
+	public function is_authenticated()
+	{
 		return isset($_SESSION["rdioOauth2expires"]) && $_SESSION["rdioOauth2expires"] > time();
 	}
 
@@ -63,10 +64,10 @@ class RdioLib
 	 * @access private
 	 * @return boolean
 	 */
-	private function is_accesstoken_expired() {
+	private function is_accesstoken_expired()
+	{
 		return isset($_SESSION["rdioOauth2expires"]) && $_SESSION["rdioOauth2expires"] <= time();
 	}
-
 
 	/**
 	 * Set session variables after successful OAuth handshake
@@ -124,7 +125,9 @@ class RdioLib
 			$this->set_oauth_session($result);
 
 		}
-		elseif (isset($_SESSION["rdioOauth2state"]) && !empty($_GET['code']) && !empty($_GET['state']) && $_GET['state'] == $_SESSION['rdioOauth2state'])
+		elseif (isset($_SESSION["rdioOauth2state"]) 
+			&& !empty($_GET['code']) && !empty($_GET['state']) 
+			&& $_GET['state'] == $_SESSION['rdioOauth2state'])
 		{
 			$ch = curl_init($this->token_endpoint);
 			curl_setopt($ch, CURLOPT_POST, true);
