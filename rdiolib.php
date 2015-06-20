@@ -188,7 +188,7 @@ class RdioLib
 	public function __call($method, $params=array())
 	{
 		$params['method'] = $method;
-		$ch = curl_init($this->api_endpoint);
+		$ch = curl_init(self::API_ENDPOINT);
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
