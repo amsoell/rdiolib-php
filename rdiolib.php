@@ -24,12 +24,16 @@
 
 class RdioLib
 {
-	private $client_id              = '';
-	private $client_secret          = '';
-	private $redirect_uri           = '';
-	private $authorization_endpoint = 'https://www.rdio.com/oauth2/authorize';
-	private $token_endpoint         = 'https://services.rdio.com/oauth2/token';
-	private $api_endpoint           = 'https://services.rdio.com/api/1/';
+	const AUTHORIZATION_ENDPOINT = 'https://www.rdio.com/oauth2/authorize';
+	const TOKEN_ENDPOINT         = 'https://services.rdio.com/oauth2/token';
+	const API_ENDPOINT           = 'https://services.rdio.com/api/1/';
+	const AUTH_FAILED            = 0; // OAuth failed
+	const AUTH_SUCCESS           = 1; // OAuth successful
+	const AUTH_SUCCESS_INITIAL   = 2; // OAuth successful - first time
+
+	private $client_id           = '';
+	private $client_secret       = '';
+	private $redirect_uri        = '';
 
 	/**
 	 * Constructor
@@ -39,7 +43,6 @@ class RdioLib
 	 * @param $client_secret
 	 * @param $redirect_uri
 	 */
-
 	public function __construct($client_id, $client_secret, $redirect_uri)
 	{
 		$this->client_id = $client_id;
@@ -70,7 +73,7 @@ class RdioLib
 	}
 
 	/**
-	 * Set session variables after successful OAuth handshake
+	 * Set/unset session variables after successful/failed OAuth handshake
 	 *
 	 * @access private
 	 * @param object $auth
@@ -93,21 +96,23 @@ class RdioLib
 	}
 
 	/**
-	 * Performs OAuth2 authentication handshake, returns true if successful.
+	 * Performs OAuth2 authentication handshake.
 	 *
 	 * @access public
-	 * @return boolean
+	 * @return AUTH_FAILED, AUTH_SUCCESS, AUTH_SUCCESS_INITIAL
 	 */
 	public function authenticate()
 	{
+		$retval = self::AUTH_FAILED;
+
 		if ($this->is_authenticated())
 		{
-			return true;
+			$retval = self::AUTH_SUCCESS;
 
 		}
 		elseif ($this->is_accesstoken_expired())
 		{
-			$ch = curl_init($this->token_endpoint);
+			$ch = curl_init(self::TOKEN_ENDPOINT);
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -124,13 +129,16 @@ class RdioLib
 			curl_close($ch);
 			$result = json_decode($result);
 			$this->set_oauth_session($result);
+			if ($this->is_authenticated()) {
+				$retval = self::AUTH_SUCCESS;
+			}
 
 		}
-		elseif (isset($_SESSION["rdioOauth2state"]) 
-			&& !empty($_GET['code']) && !empty($_GET['state']) 
+		elseif (isset($_SESSION["rdioOauth2state"])
+			&& !empty($_GET['code']) && !empty($_GET['state'])
 			&& $_GET['state'] == $_SESSION['rdioOauth2state'])
 		{
-			$ch = curl_init($this->token_endpoint);
+			$ch = curl_init(self::TOKEN_ENDPOINT);
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -148,7 +156,9 @@ class RdioLib
 			curl_close($ch);
 			$result = json_decode($result);
 			$this->set_oauth_session($result);
-
+			if ($this->is_authenticated()) {
+				$retval = self::AUTH_SUCCESS_INITIAL;
+			}
 		}
 		else
 		{
@@ -159,12 +169,12 @@ class RdioLib
 				'redirect_uri'  => $this->redirect_uri,
 				'state'         => $_SESSION["rdioOauth2state"]
 				];
-			$url = $this->authorization_endpoint . '?' . http_build_query($params, null, '&');
+			$url = self::AUTHORIZATION_ENDPOINT . '?' . http_build_query($params, null, '&');
 			header("Location: $url");
 			die;
 		}
 
-		return isset($_SESSION["rdioOauth2auth"]);
+		return $retval;
 	}
 
 	/**
