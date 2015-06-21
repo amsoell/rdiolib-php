@@ -187,13 +187,13 @@ class RdioLib
 	 */
 	public function __call($method, $params=array())
 	{
-		$params['method'] = $method;
+		$params[0]['method'] = $method;
 		$ch = curl_init(self::API_ENDPOINT);
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params[0]));
 		curl_setopt($ch, CURLOPT_HTTPHEADER, [
 			'Content-type: application/x-www-form-urlencoded',
 			'Authorization: Bearer '.$_SESSION["rdioOauth2auth"]->access_token
