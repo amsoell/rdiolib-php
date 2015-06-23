@@ -122,17 +122,15 @@ class RdioLib
 				'refresh_token' => $_SESSION['oauth2auth']->refresh_token
 				]));
 			curl_setopt($ch, CURLOPT_HTTPHEADER, [
-			  'Content-type: application/x-www-form-urlencoded',
-			  'Authorization: Basic '.base64_encode($this->client_id .  ':' . $this->client_secret)
-			  ]);
-			$result = curl_exec($ch);
+				'Content-type: application/x-www-form-urlencoded',
+				'Authorization: Basic '.base64_encode($this->client_id.':'.$this->client_secret)
+				]);
+			$result = json_decode(curl_exec($ch));
 			curl_close($ch);
-			$result = json_decode($result);
 			$this->set_oauth_session($result);
 			if ($this->is_authenticated()) {
 				$retval = self::AUTH_SUCCESS;
 			}
-
 		}
 		elseif (isset($_SESSION["rdioOauth2state"])
 			&& !empty($_GET['code']) && !empty($_GET['state'])
@@ -152,9 +150,8 @@ class RdioLib
 				'Content-type: application/x-www-form-urlencoded',
 				'Authorization: Basic '.base64_encode($this->client_id .  ':' . $this->client_secret)
 				]);
-			$result = curl_exec($ch);
+			$result = json_decode(curl_exec($ch));
 			curl_close($ch);
-			$result = json_decode($result);
 			$this->set_oauth_session($result);
 			if ($this->is_authenticated()) {
 				$retval = self::AUTH_SUCCESS_INITIAL;
@@ -187,19 +184,61 @@ class RdioLib
 	 */
 	public function __call($method, $params=array())
 	{
-		$params[0]['method'] = $method;
-		$ch = curl_init(self::API_ENDPOINT);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params[0]));
-		curl_setopt($ch, CURLOPT_HTTPHEADER, [
-			'Content-type: application/x-www-form-urlencoded',
-			'Authorization: Bearer '.$_SESSION["rdioOauth2auth"]->access_token
-			]);
-		$result = curl_exec($ch);
-		curl_close($ch);
-		return json_decode($result);
+		if ($this->is_authenticated())
+		{
+			// Use the authenticated access token
+			$token = $_SESSION["rdioOauth2auth"]->access_token;
+		}
+		elseif (isset($_SESSION["rdioOauth2clientToken"]))
+		{
+			// User is not authenticated, but we have a client token; Use that
+			$token = $_SESSION["rdioOauth2clientToken"]->access_token;
+		}
+		else
+		{
+			// No authentication, no client token; Get a client token
+			$ch = curl_init(self::TOKEN_ENDPOINT);
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+				'client_id'     => $this->client_id,
+				'client_secret' => $this->client_secret,
+				'grant_type'    => 'client_credentials'
+			]));
+			curl_setopt($ch, CURLOPT_HTTPHEADER, [
+				'Content-type: application/x-www-form-urlencoded'
+				]);
+			$result = json_decode(curl_exec($ch));
+			curl_close($ch);
+			$_SESSION['rdioOauth2clientToken'] = $result;
+			$token = @$result->access_token;
+		}
+
+		if (isset($token))
+		{
+			$params[0]['method'] = $method;
+			$ch = curl_init(self::API_ENDPOINT);
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params[0]));
+			curl_setopt($ch, CURLOPT_HTTPHEADER, [
+				'Content-type: application/x-www-form-urlencoded',
+				'Authorization: Bearer '.$token
+				]);
+			$result = json_decode(curl_exec($ch));
+			curl_close($ch);
+		}
+		else
+		{
+			$result = new stdClass;
+			$result->status = 'error';
+			$result->message = 'Unable to determine token';
+		}
+
+		return $result;
 	}
 }
